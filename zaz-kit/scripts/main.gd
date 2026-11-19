@@ -119,6 +119,10 @@ func _ready() -> void:
 	key_edit = _line("Pixabay API key (saved)", box)
 	key_edit.text = _cfg_get("pixabay_key", "")
 	key_edit.text_changed.connect(func(k): _cfg_set("pixabay_key", k))
+	_btn("Paste Pixabay key", box, func():
+		key_edit.text = DisplayServer.clipboard_get().strip_edges()
+		_cfg_set("pixabay_key", key_edit.text)
+		status.text = "Key pasted")
 	subject_edit = _line("Photo subject (blank = random)", box)
 	var row := HBoxContainer.new()
 	box.add_child(row)
