@@ -11,6 +11,7 @@ const STEPS := [
 	["cover", "Cover made"],
 ]
 
+var confirm_dialog: ConfirmationDialog
 var product: Image
 var cutout: Image
 var photo: Image
@@ -65,6 +66,12 @@ func _ready() -> void:
 	design_pick.item_selected.connect(_on_design_picked)
 	box.add_child(design_pick)
 	_refresh_designs()
+	
+	confirm_dialog = ConfirmationDialog.new()
+	confirm_dialog.dialog_text = "Delete this design and all its files?"
+	confirm_dialog.confirmed.connect(_delete_design)
+	add_child(confirm_dialog)
+	_btn("Delete this design", box, func(): confirm_dialog.popup_centered())
 
 	_header("2. Idea", box)
 	idea_label = _label("Tap New idea", box)
@@ -115,11 +122,13 @@ func _ready() -> void:
 	subject_edit = _line("Photo subject (blank = random)", box)
 	var row := HBoxContainer.new()
 	box.add_child(row)
-	_label("Cover size px:", row)
+	var size_lbl := _label("Cover size px:", row)
+	size_lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	size_spin = SpinBox.new()
 	size_spin.min_value = 100
 	size_spin.max_value = 1000
 	size_spin.value = 240
+	size_spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(size_spin)
 	_btn("New cover photo", box, _new_cover_photo)
 	_btn("Rebuild cover (after changing size)", box, _make_cover)
@@ -385,3 +394,16 @@ func _on_words_ready() -> void:
 	DisplayServer.clipboard_set(text)
 	idea_label.text = text
 	status.text = "10 prompts copied"
+	
+func _delete_design() -> void:
+	var n := name_edit.text.strip_edges()
+	if n == "":
+		return
+	Designs.delete_design(n)
+	name_edit.text = ""
+	cutout = null
+	cover = null
+	product_view.texture = null
+	cover_view.texture = null
+	_refresh_designs()
+	status.text = "Deleted " + n

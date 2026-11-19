@@ -10,6 +10,7 @@ static func build(photo: Image, cutout: Image, size := 240, fill := 0.72) -> Ima
 	if cutout == null:
 		return out
 
+	
 	var fg := cutout.duplicate() as Image
 	var used := fg.get_used_rect()
 	if used.size.x > 0 and used.size.y > 0:

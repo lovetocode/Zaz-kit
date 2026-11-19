@@ -41,3 +41,9 @@ static func load_state(design_name: String) -> Dictionary:
 		return {}
 	var data = JSON.parse_string(FileAccess.get_file_as_string(p))
 	return data if typeof(data) == TYPE_DICTIONARY else {}
+	
+static func delete_design(design_name: String) -> void:
+	var d := design_dir(design_name)
+	for f in DirAccess.get_files_at(d):
+		DirAccess.remove_absolute(d.path_join(f))
+	DirAccess.remove_absolute(d)
