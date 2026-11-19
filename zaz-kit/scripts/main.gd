@@ -36,6 +36,7 @@ var status: Label
 var file_dialog: FileDialog
 var pixabay: Pixabay
 var words: Words
+var save_dialog: FileDialog
 
 
 func _ready() -> void:
@@ -130,13 +131,21 @@ func _ready() -> void:
 	size_lbl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	size_spin = SpinBox.new()
 	size_spin.min_value = 100
-	size_spin.max_value = 1000
+	size_spin.max_value = 2000
 	size_spin.value = 240
 	size_spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(size_spin)
 	_btn("New cover photo", box, _new_cover_photo)
 	_btn("Rebuild cover (after changing size)", box, _make_cover)
 	cover_view = _preview(box)
+	
+	_btn("Save cover as...", box, func():
+		if cover == null:
+			status.text = "Make a cover first"
+			return
+		save_dialog.current_file = "cover.png"
+		save_dialog.popup_centered_ratio(0.9))
+	
 
 	_header("6. Checklist", box)
 	for s in STEPS:
@@ -145,6 +154,14 @@ func _ready() -> void:
 		cb.toggled.connect(func(_on): _save_state())
 		box.add_child(cb)
 		checks[s[0]] = cb
+		
+	save_dialog = FileDialog.new()
+	save_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	save_dialog.filters = PackedStringArray(["*.png ; PNG image"])
+	save_dialog.set("use_native_dialog", true)
+	save_dialog.file_selected.connect(_on_save_as)
+	add_child(save_dialog)
 
 	file_dialog = FileDialog.new()
 	file_dialog.access = FileDialog.ACCESS_FILESYSTEM
@@ -411,3 +428,9 @@ func _delete_design() -> void:
 	cover_view.texture = null
 	_refresh_designs()
 	status.text = "Deleted " + n
+	
+func _on_save_as(path: String) -> void:
+	if cover.save_png(path) == OK:
+		status.text = "Saved: " + path
+	else:
+		status.text = "Couldn't save there"

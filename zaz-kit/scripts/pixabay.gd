@@ -33,7 +33,7 @@ func _on_search(_r: int, code: int, _h: PackedStringArray, body: PackedByteArray
 		failed.emit("No Pixabay results for that subject")
 		return
 	var hit = data["hits"].pick_random()
-	if _dl.request(hit["webformatURL"]) != OK:
+	if _dl.request(hit.get("largeImageURL", hit["webformatURL"])) != OK:
 		failed.emit("Couldn't start the download")
 
 
