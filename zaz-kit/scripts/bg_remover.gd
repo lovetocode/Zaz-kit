@@ -1,13 +1,18 @@
 class_name BgRemover
 
-# Flood fills from the 4 corners, removing pixels close to the corner color.
-# Anything inside the design stays, because the fill can't reach it.
-static func remove_bg(src: Image, tol := 0.12) -> Image:
+
+# Flood fills from the 4 corners. Green (protect) pixels are never removed and
+# the fill can't spread through them. Red (kill) pixels are always removed.
+static func remove_bg(src: Image, tol := 0.12, protect: Image = null, kill: Image = null) -> Image:
 	var img := src.duplicate() as Image
 	img.convert(Image.FORMAT_RGBA8)
 	var w := img.get_width()
 	var h := img.get_height()
 	var d := img.get_data()
+	var use_protect := protect != null
+	var pd := PackedByteArray()
+	if use_protect:
+		pd = protect.get_data()
 	var corners := [0, w - 1, (h - 1) * w, h * w - 1]
 	var rr := 0
 	var rg := 0
@@ -32,6 +37,8 @@ static func remove_bg(src: Image, tol := 0.12) -> Image:
 			continue
 		seen[i] = 1
 		var o := i * 4
+		if use_protect and pd[o + 3] > 0:
+			continue
 		if absi(d[o] - rr) > t or absi(d[o + 1] - rg) > t or absi(d[o + 2] - rb) > t:
 			continue
 		d[o + 3] = 0
@@ -45,4 +52,23 @@ static func remove_bg(src: Image, tol := 0.12) -> Image:
 			stack.append(i - w)
 		if y < h - 1:
 			stack.append(i + w)
+	if kill != null:
+		var kd := kill.get_data()
+		for i in w * h:
+			if kd[i * 4 + 3] > 0:
+				d[i * 4 + 3] = 0
+	return Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, d)
+
+
+# Keeps only the painted pixels and erases everything else.
+static func keep_only(src: Image, keep: Image) -> Image:
+	var img := src.duplicate() as Image
+	img.convert(Image.FORMAT_RGBA8)
+	var w := img.get_width()
+	var h := img.get_height()
+	var d := img.get_data()
+	var kd := keep.get_data()
+	for i in w * h:
+		if kd[i * 4 + 3] == 0:
+			d[i * 4 + 3] = 0
 	return Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, d)

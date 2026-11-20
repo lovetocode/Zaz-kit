@@ -37,6 +37,7 @@ var file_dialog: FileDialog
 var pixabay: Pixabay
 var words: Words
 var save_dialog: FileDialog
+var paint_editor: PaintEditor
 
 
 func _ready() -> void:
@@ -115,6 +116,7 @@ func _ready() -> void:
 	box.add_child(tol_slider)
 	_btn("Remove background", box, _remove_bg)
 	product_view = _preview(box)
+	_btn("Paint tool (protect + remove)", box, _open_paint)
 
 	_header("5. Cover photo", box)
 	key_edit = _line("Pixabay API key (saved)", box)
@@ -179,6 +181,12 @@ func _ready() -> void:
 	add_child(words)
 	words.ready_list.connect(_on_words_ready)
 	words.failed.connect(func(m): status.text = m)
+	
+	paint_editor = PaintEditor.new()
+	paint_editor.visible = false
+	add_child(paint_editor)
+	paint_editor.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	paint_editor.finished.connect(_on_paint_done)
 
 
 # ---------- UI helpers ----------
@@ -434,3 +442,20 @@ func _on_save_as(path: String) -> void:
 		status.text = "Saved: " + path
 	else:
 		status.text = "Couldn't save there"
+		
+func _open_paint() -> void:
+	print("paint button pressed, product = ", product)
+	if product == null:
+		status.text = "Load a product photo first"
+		return
+	paint_editor.open(product)
+	print("editor visible: ", paint_editor.visible, " size: ", paint_editor.size)
+
+
+func _on_paint_done(res: Image) -> void:
+	cutout = res
+	product_view.texture = _tex(cutout)
+	_save_img(cutout, "product_cutout.png")
+	_mark("cutout")
+	if photo != null:
+		_make_cover()
